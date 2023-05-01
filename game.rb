@@ -29,6 +29,9 @@ class Game
     player = metrics[0]
     row = metrics[1]
     column = metrics[2]
+    if column == 0 || column == 2 || (column == 1 && row == 1)
+      if check_diagonal(row, column, player.symbol)
+        return
     @board.check_row(row, player.symbol ) || @board.check_column(column, player.symbol) 
   end
     
