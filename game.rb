@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-require 'pry'
 
 # Simple rendition of tic-tac-toe
 class Game
@@ -21,20 +20,52 @@ class Game
         return
       end
     end
+    puts 'Tie game!'
   end
 
   private
 
   def winner?(metrics)
-    player = metrics[0]
-    row = metrics[1]
-    column = metrics[2]
-    if column == 0 || column == 2 || (column == 1 && row == 1)
-      if check_diagonal(row, column, player.symbol)
-        return
-    @board.check_row(row, player.symbol ) || @board.check_column(column, player.symbol) 
+    row = metrics[:row]
+    column = metrics[:column]
+    symbol = metrics[:symbol]
+    if diagonal?(row, column, symbol)
+      return true
+    elsif @board.check_row(row, symbol) || @board.check_column(column, symbol)
+      return true
+    end
+
+    false
   end
-    
+
+  def diagonal?(row, column, symbol)
+    win = false
+    if column.zero? || column == 2 || (column == 1 && row == 1)
+      i = 0
+      3.times do
+        win = @board.board[i][i] == symbol
+        unless win
+          break
+        end
+
+        i += 1
+      end
+      if win
+        return win
+      end
+      
+      i = 2
+      3.times do
+        win = @board.board[@board.height - 1 - i][i] == symbol
+        unless win
+          return false
+        end
+
+        i -= 1
+      end
+    end
+    win
+  end
 
   def rotate(player)
     @players.find_index(player) == 1 ? @players[0] : @players[1]
@@ -46,7 +77,6 @@ class Game
       player2 = Player.new('prod', '!', @board)
       @players.push(player1)
       @players.push(player2)
-      return
     else
       2.times do
         puts 'Enter player name: '
@@ -79,11 +109,18 @@ class Player
       column = column_choice
     end
     @board.update(row, column, @symbol)
-    [self, row, column]
+    { symbol: @symbol, row: row, column: column }
   end
 
   def valid_move?(row, column)
-    row.between?(0, @board.width - 1) && column.between?(0, @board.height - 1) && @board.check_index(row, column)
+    unless row.between?(0, @board.width - 1) && column.between?(0, @board.height - 1) && @board.check_index(row, column)
+      unless row == -1 && column == -1
+        puts 'Please enter valid row/column index'
+        puts @board
+      end
+      return false
+    end
+    true
   end
 
   def row_choice
@@ -94,13 +131,13 @@ class Player
   def column_choice
     puts 'Column: '
     column = gets.chomp.to_i - 1
-
   end
 end
 
 # State of the game board
 class Board
-  attr_reader :moves, :total_moves, :height, :width, :board
+  attr_reader :total_moves, :height, :width, :board
+  attr_accessor :moves
 
   def initialize(height, width)
     @height = height
@@ -111,10 +148,9 @@ class Board
   end
 
   def check_index(row, column)
-    binding.pry
     valid = @board[row][column] == '-'
     unless valid
-      puts "Board spot already taken, choose again."
+      puts 'Board spot already taken, choose again.'
     end
     valid
   end
@@ -135,7 +171,6 @@ class Board
   def update(row, column, symbol)
     @board[row][column] = symbol
     @moves += 1
-    puts 'Please enter valid row/column index'
     puts self
   end
 
